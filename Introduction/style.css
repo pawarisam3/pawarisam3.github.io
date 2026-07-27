@@ -1,0 +1,57 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #839958;
+    font-family: Arial, Helvetica, sans-serif;
+    color: beige;
+}
+
+.container {
+    width: 900px;
+    margin: 40px auto;
+}
+
+/* กล่องใหญ่อยู่ด้านบน */
+.about {
+    background: #D3968C;
+    border: 4px solid #105666;
+    padding: 30px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.about img {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 15px 0;
+}
+
+/* กล่องแถวล่างสุด ใช้ flex เพื่อจัดเรียง 3 กล่องขนานกัน */
+.bottom {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px; /* ระยะห่างระหว่างกล่อง */
+}
+
+/* กำหนดให้กล่องทั้ง 3 ขยายขนาดเท่าๆ กัน */
+.bottom > div {
+    flex: 1;
+    background: #D3968C;
+    border: 4px solid #105666;
+    padding: 20px;
+}
+
+.skills ul {
+    padding-left: 20px;
+}
+
+h2 {
+    margin-top: 0;
+    text-align: center;
+}
