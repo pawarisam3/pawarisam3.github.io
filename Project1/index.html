@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Portfolio 3D</title>
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #backButton {
+            display: none;
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            z-index: 100;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #111;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+            transition: all 0.25s ease;
+        }
+
+        #backButton:hover {
+            background: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+
+    <button id="backButton">← BACK</button>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/EXRLoader.js"></script>
+
+    <script>
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.0;
+        document.body.appendChild(renderer.domElement);
+
+        const scene = new THREE.Scene();
+
+        
+        const camera = new THREE.PerspectiveCamera(
+            45,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+       
+        const initialCameraPos = new THREE.Vector3(0, 8.0, 40.5);
+        const initialTargetPos = new THREE.Vector3(0, 1.2, 0);
+        camera.position.copy(initialCameraPos);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.target.copy(initialTargetPos);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1;
+        controls.update();
+
+        
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        directionalLight.position.set(10, 15, 10);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        scene.add(directionalLight);
+
+     
+        const exrSkyboxUrl = 'https://pawarisam3.github.io/autumn_ground_1k.exr';
+        const pmremGenerator = new THREE.PMREMGenerator(renderer);
+        pmremGenerator.compileEquirectangularShader();
+
+        new THREE.EXRLoader()
+            .setDataType(THREE.UnsignedByteType)
+            .load(
+                exrSkyboxUrl,
+                (texture) => {
+                    const skybox = pmremGenerator.fromEquirectangular(texture).texture;
+                    scene.background = skybox;
+                    scene.environment = skybox;
+                    texture.dispose();
+                    pmremGenerator.dispose();
+                },
+                undefined,
+                (error) => {
+                    console.error("Unable to load EXR skybox:", error);
+                }
+            );
+
+        
+        const clock = new THREE.Clock();
+        let mixer;
+
+        const loader = new THREE.GLTFLoader();
+        loader.load(
+            'https://pawarisam3.github.io/Mashroom6.glb',
+            (gltf) => {
+                const model = gltf.scene;
+
+                model.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+
+                model.position.set(0, 0, 1);
+                model.scale.set(3, 3, 3);
+                scene.add(model);
+
+                if (gltf.animations && gltf.animations.length > 0) {
+                    mixer = new THREE.AnimationMixer(model);
+                    const clip = THREE.AnimationClip.findByName(gltf.animations, '_mashroomAction') || gltf.animations[0];
+                    if (clip) {
+                        mixer.clipAction(clip).play();
+                    }
+                }
+            },
+            undefined,
+            (error) => {
+                console.error("Failed to load model:", error);
+            }
+        );
+
+       
+        const cameraPositions = {
+            
+            about: {
+                position: new THREE.Vector3(-20.0, 8.0, 13.0),
+                target: new THREE.Vector3(-8.0, 2.0, 6.0)
+            },
+            
+            contact: {
+                position: new THREE.Vector3(6.0, 10.5, 25.0),
+                target: new THREE.Vector3(1.0, 0.0, 3.5)
+            },
+            
+            project: {
+                position: new THREE.Vector3(0.0, 4.5, -15.0),
+                target: new THREE.Vector3(0.0, 3.0, 2.0)
+            }
+        };
+
+        const clickPoints = {
+            about: new THREE.Vector3(-8.0, 2.0, 6.0),    
+            project: new THREE.Vector3(-5.5, 0.5, 7.5),   
+            contact: new THREE.Vector3(1.0, 0.0, 3.5)    
+        };
+        let moving = false;
+        const targetCameraPosition = new THREE.Vector3();
+        const targetLookAt = new THREE.Vector3();
+
+        function moveCamera(section) {
+            const destination = cameraPositions[section];
+            if (!destination) return;
+
+            targetCameraPosition.copy(destination.position);
+            targetLookAt.copy(destination.target);
+
+            moving = true;
+            controls.enabled = false;
+
+            document.getElementById("backButton").style.display = "block";
+        }
+
+        function resetCamera() {
+            moving = true;
+            targetCameraPosition.copy(initialCameraPos);
+            targetLookAt.copy(initialTargetPos);
+            document.getElementById("backButton").style.display = "none";
+        }
+
+    
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        window.addEventListener("click", (event) => {
+            if (event.target.id === "backButton") return;
+
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            if (intersects.length > 0) {
+                const hit = intersects[0].point;
+
+                let nearestSection = null;
+                let nearestDistance = Infinity;
+
+                for (const section in clickPoints) {
+                    const distance = hit.distanceTo(clickPoints[section]);
+                    if (distance < nearestDistance) {
+                        nearestDistance = distance;
+                        nearestSection = section;
+                    }
+                }
+
+                if (nearestSection) {
+                    moveCamera(nearestSection);
+                }
+            }
+        });
+
+        document.getElementById("backButton").addEventListener("click", resetCamera);
+
+        
+        window.addEventListener('keydown', (event) => {
+            if (event.key === '1') moveCamera('about');
+            if (event.key === '2') moveCamera('project');
+            if (event.key === '3') moveCamera('contact');
+            if (event.key === 'Escape') resetCamera();
+        });
+
+        
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            if (mixer) mixer.update(delta);
+
+            if (moving) {
+                camera.position.lerp(targetCameraPosition, 0.05);
+                controls.target.lerp(targetLookAt, 0.05);
+                camera.lookAt(controls.target);
+
+                if (camera.position.distanceTo(targetCameraPosition) < 0.05) {
+                    camera.position.copy(targetCameraPosition);
+                    controls.target.copy(targetLookAt);
+                    moving = false;
+                    controls.enabled = true;
+                }
+            } else {
+                controls.update();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        
+        window.addEventListener("resize", () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+
+</html>
