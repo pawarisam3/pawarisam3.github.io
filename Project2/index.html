@@ -67,7 +67,7 @@
 
                 vec3 pos = position;
 
-                pos.z += sin(pos.x * 5.0 + uTime) * 0.1;
+                pos.z += sin(pos.x * 5.0 + uTime) * 0.2;
 
                 gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
             }
